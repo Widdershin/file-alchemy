@@ -1,0 +1,25 @@
+{
+  "name": "filealchemy",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "build": "tsc",
+    "bundle": "browserify build/app.js -o static/bundle.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "snabbdom": "^3.0.1",
+    "snabbdom-helpers": "^7.2.0"
+  },
+  "devDependencies": {
+    "browserify": "^17.0.0",
+    "budo": "^11.6.4",
+    "prettier": "^2.3.0",
+    "tsify": "^5.0.4",
+    "typescript": "^4.2.4"
+  }
+}
