@@ -1,25 +1,33 @@
 {
-  "name": "filealchemy",
+  "name": "my-webpack-project",
   "version": "1.0.0",
-  "description": "",
+  "description": "My webpack project",
   "main": "index.js",
   "scripts": {
-    "build": "tsc",
+    "build": "webpack --mode=production --node-env=production",
     "bundle": "browserify build/app.js -o static/bundle.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build:dev": "webpack --mode=development",
+    "build:prod": "webpack --mode=production --node-env=production",
+    "watch": "webpack --watch",
+    "serve": "webpack serve"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@imagemagick/magick-wasm": "0.0.5",
     "snabbdom": "^3.0.1",
     "snabbdom-helpers": "^7.2.0"
   },
   "devDependencies": {
+    "@types/node": "^15.0.2",
     "browserify": "^17.0.0",
     "budo": "^11.6.4",
+    "partition-bundle": "^2.5.0",
     "prettier": "^2.3.0",
     "tsify": "^5.0.4",
+    "tslib": "^2.2.0",
     "typescript": "^4.2.4"
   }
 }

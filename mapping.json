@@ -1,0 +1,5 @@
+
+{
+  "bundle.js": ["./build/app.js"],
+  "modules/imagemagick.js": ["./build/modules/imagemagick.js"]
+}
