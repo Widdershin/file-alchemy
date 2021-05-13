@@ -1,5 +1,6 @@
 
 {
   "bundle.js": ["./build/app.js"],
-  "modules/imagemagick.js": ["./build/modules/imagemagick.js"]
+  "modules/imagemagick.js": ["./build/modules/imagemagick.js"],
+  "modules/base64.js": ["./build/modules/base64.js"]
 }

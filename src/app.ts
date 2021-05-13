@@ -18,6 +18,8 @@ import type { MemoryStream, Stream } from "xstream";
 import sampleCombine from "xstream/extra/sampleCombine";
 import dropRepeats from "xstream/extra/dropRepeats";
 
+import { operations } from "./operations";
+
 declare const loadjs: any;
 
 type Sources = {
@@ -36,8 +38,8 @@ type State = {
   results: OperationCache;
 };
 
-type Operation = {
-  module: "imagemagick";
+export type Operation = {
+  module: ModuleName;
   name: string;
   type: RegExp;
   args: Argument[];
@@ -69,56 +71,10 @@ type Module =
   | { state: "loading" }
   | { state: "initializing" }
   | { state: "ready"; exports: any };
-type ModuleName = "imagemagick";
+type ModuleName = "imagemagick" | "base64";
 type ModuleCache = Map<ModuleName, Module>;
 type ModuleSinks = Stream<Set<ModuleName>>;
 type ModuleSources = Stream<ModuleCache>;
-
-const operations: Operation[] = [
-  {
-    module: "imagemagick",
-    name: "resize",
-    type: /image\/.*/,
-    args: [
-      { name: "Width", type: "number", default: 512 },
-      { name: "Height", type: "number", default: 512 },
-    ],
-  },
-  {
-    module: "imagemagick",
-    name: "blur",
-    type: /image\/.*/,
-    args: [
-      { name: "Radius", type: "number", default: 1 },
-      { name: "Sigma", type: "number", default: 5 },
-    ],
-  },
-  {
-    module: "imagemagick",
-    name: "sharpen",
-    type: /image\/.*/,
-    args: [
-      { name: "Radius", type: "number", default: 1 },
-      { name: "Sigma", type: "number", default: 5 },
-    ],
-  },
-  {
-    module: "imagemagick",
-    name: "autoOrient",
-    type: /image\/.*/,
-    args: [],
-  },
-  {
-    module: "imagemagick",
-    name: "modulate",
-    type: /image\/.*/,
-    args: [
-      { name: "Brightness", type: "number", default: 100 },
-      { name: "Saturation", type: "number", default: 100 },
-      { name: "Hue", type: "number", default: 100 },
-    ],
-  },
-];
 
 function App(sources: Sources): Sinks {
   const state: State = {
@@ -238,10 +194,15 @@ function view(state: State): VNode {
     h("section.content", [
       div(".box", [
         h2("Input"),
-        input(".file-selection", {
-          attrs: { type: "file", multiple: false },
-        }),
-        h("ul", renderFiles(state.files)),
+        div(".box-content", [
+          div(".left", [
+            input(".file-selection", {
+              attrs: { type: "file", multiple: false },
+            }),
+            ...renderFiles(state.files),
+          ]),
+          div(".right", renderPreviews(state.files)),
+        ]),
       ]),
       ...state.operations.map((op, index) =>
         renderOperationState(op, index, state.results)
@@ -256,21 +217,32 @@ function renderFiles(files: FileList | null): VNode[] {
     return [];
   }
 
-  const output: VNode[] = [];
+  return [
+    div(
+      ".file-names",
+      Array.from(files).map((file) =>
+        div(".file", [`${file.name} - ${file.type} - ${renderSize(file.size)}`])
+      )
+    ),
+  ];
+}
 
-  for (let i = 0; i < files.length; i++) {
-    const file = files[i];
-
-    const objectURL = URL.createObjectURL(file);
-
-    const image = h("img", { props: { src: objectURL } });
-
-    output.push(
-      h("li", [`${file.name} - ${file.type} - ${renderSize(file.size)}`, image])
-    );
+function renderPreviews(files: FileList | null): VNode[] {
+  if (!files) {
+    return [];
   }
 
-  return output;
+  return [
+    div(
+      ".images",
+      Array.from(files).map((file) =>
+        img({
+          attrs: { decoding: "async" },
+          props: { src: URL.createObjectURL(file) },
+        })
+      )
+    ),
+  ];
 }
 
 function renderOperations(files: FileList | null): VNode {
@@ -296,14 +268,17 @@ function renderOperationState(
     return h("div");
   }
 
-  let image = h("div");
+  let preview = h("div");
 
   const operationResult = results.get(operationState) || { state: "loading" };
 
   if (operationResult.state === "complete") {
     const objectURL = URL.createObjectURL(operationResult.output);
 
-    image = h("img", { props: { src: objectURL } });
+    preview = h("img", {
+      attrs: { decoding: "async" },
+      props: { src: objectURL },
+    });
   }
 
   function renderArgument(argState: ArgState, argIndex: number): VNode {
@@ -329,11 +304,16 @@ function renderOperationState(
   }
 
   return div(".box", [
-    div(".module-name", operation.module),
+    div(
+      ".module-name",
+      { class: { complete: operationResult.state === "complete" } },
+      state
+    ),
     h2(operation.name),
-    h("p", state),
-    ...operationState.args.map(renderArgument),
-    image,
+    div(".box-content", [
+      div(".left", [...operationState.args.map(renderArgument)]),
+      div(".right", [preview]),
+    ]),
   ]);
 }
 

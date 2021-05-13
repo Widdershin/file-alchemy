@@ -35,4 +35,21 @@ img {
 
 .module-name {
   float: right;
+  color: #bfbfbf;
+}
+
+.complete {
+  color: #99f98b;
+}
+
+.box-content {
+  display: flex;
+  justify-content: space-between;
+}
+
+.box-content .left {
+  display: grid;
+  grid-auto-flow: row;
+  grid-row-gap: 0.5em;
+  grid-auto-rows: max-content;
 }
