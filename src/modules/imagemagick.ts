@@ -107,3 +107,22 @@ export async function modulate(
     });
   });
 }
+
+export async function convertImage(
+  image: Blob,
+  format: MagickFormat,
+  hue: number
+): Promise<Blob> {
+  return image.arrayBuffer().then((buffer) => {
+    const data = new Uint8Array(buffer);
+
+    return new Promise((resolve, reject) => {
+      ImageMagick.read(data, (image) => {
+        image.write((data) => {
+          const blob = new Blob([data], { type: "image/png" });
+          resolve(blob);
+        }, format);
+      });
+    });
+  });
+}

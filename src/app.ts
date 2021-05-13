@@ -56,7 +56,7 @@ type OperationResult =
   | { state: "initializing" }
   | { state: "ready" }
   | { state: "running" }
-  | { state: "complete"; output: Blob };
+  | { state: "complete"; output: Blob; text: string };
 type OperationSources = MemoryStream<OperationCache>;
 
 type Argument = { name: string } & { type: "number"; default: number };
@@ -71,10 +71,20 @@ type Module =
   | { state: "loading" }
   | { state: "initializing" }
   | { state: "ready"; exports: any };
-type ModuleName = "imagemagick" | "base64";
+type ModuleName = "imagemagick" | "base64" | "hash-wasm";
 type ModuleCache = Map<ModuleName, Module>;
 type ModuleSinks = Stream<Set<ModuleName>>;
 type ModuleSources = Stream<ModuleCache>;
+
+const timesCircleIcon = makeIcon(
+  require("@fortawesome/free-solid-svg-icons/faTimesCircle")
+);
+
+function makeIcon({ svgPathData }: { svgPathData: string }): VNode {
+  return h("svg.icon", { attrs: { viewBox: "0 0 512 512" } }, [
+    h("path", { attrs: { d: svgPathData } }),
+  ]);
+}
 
 function App(sources: Sources): Sinks {
   const state: State = {
@@ -113,6 +123,22 @@ function App(sources: Sources): Sinks {
       };
 
       state.operations = state.operations.concat(operationState);
+
+      return state;
+    });
+
+  const deleteOperation$ = sources.DOM.select(".delete-operation")
+    .events("click")
+    .map((ev: any) => parseInt(ev.currentTarget.dataset.index, 10) || 0)
+    .debug("index")
+    .map((index) => (state: State): State => {
+      const operations = state.operations.slice();
+
+      operations.splice(index, 1);
+
+      state.operations = operations.map((op, i) =>
+        i >= index ? { ...op } : op
+      );
 
       return state;
     });
@@ -167,7 +193,8 @@ function App(sources: Sources): Sinks {
     files$,
     addOperation$,
     updateOperationResultCache$,
-    changeOperationArg$
+    changeOperationArg$,
+    deleteOperation$
   );
 
   const state$ = update$.fold((s, r) => r(s), state);
@@ -189,7 +216,7 @@ function App(sources: Sources): Sinks {
 function view(state: State): VNode {
   const moduleCache = new Map<string, any>();
 
-  return h("body", [
+  return h("main", [
     h1("File Alchemy"),
     h("section.content", [
       div(".box", [
@@ -275,10 +302,16 @@ function renderOperationState(
   if (operationResult.state === "complete") {
     const objectURL = URL.createObjectURL(operationResult.output);
 
-    preview = h("img", {
-      attrs: { decoding: "async" },
-      props: { src: objectURL },
-    });
+    const type = operationResult.output.type;
+
+    if (type.startsWith("text/") || type.endsWith(";base64")) {
+      preview = h("pre.base64", operationResult.text);
+    } else {
+      preview = h("img", {
+        attrs: { decoding: "async" },
+        props: { src: objectURL },
+      });
+    }
   }
 
   function renderArgument(argState: ArgState, argIndex: number): VNode {
@@ -303,17 +336,27 @@ function renderOperationState(
     state += ` (${renderSize(operationResult.output.size)})`;
   }
 
+  const boxContent = [];
+
+  if (operationState.args.length > 0) {
+    boxContent.push(div(".left", [...operationState.args.map(renderArgument)]));
+  }
+
+  boxContent.push(div(".right", [preview]));
+
   return div(".box", [
     div(
       ".module-name",
       { class: { complete: operationResult.state === "complete" } },
-      state
+      [
+        div(".module-state", state),
+        div(".delete-operation", { dataset: { index: index.toString() } }, [
+          timesCircleIcon,
+        ]),
+      ]
     ),
     h2(operation.name),
-    div(".box-content", [
-      div(".left", [...operationState.args.map(renderArgument)]),
-      div(".right", [preview]),
-    ]),
+    div(".box-content", boxContent),
   ]);
 }
 
@@ -477,8 +520,14 @@ function operationsDriver(operations$: OperationSinks): OperationSources {
               previousResult,
               ...operationState.args.map((arg) => arg.value)
             ).then((output: Blob) => {
-              updateCache(input, operationState, { state: "complete", output });
-              process([{ input, operations }, moduleCache]);
+              output.text().then((text) => {
+                updateCache(input, operationState, {
+                  state: "complete",
+                  output,
+                  text,
+                });
+                process([{ input, operations }, moduleCache]);
+              });
             });
           }
 

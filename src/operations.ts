@@ -50,4 +50,22 @@ export const operations: Operation[] = [
     type: /.*/,
     args: [],
   },
+  {
+    module: "hash-wasm",
+    name: "md5",
+    type: /.*/,
+    args: [],
+  },
+  {
+    module: "hash-wasm",
+    name: "sha1",
+    type: /.*/,
+    args: [],
+  },
+  {
+    module: "hash-wasm",
+    name: "sha256",
+    type: /.*/,
+    args: [],
+  },
 ];

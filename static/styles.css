@@ -4,7 +4,7 @@ html, body {
   padding: 0;
   background: #171317;
 
-  font-family: Helvetica, arial, sans-serif;
+  font-family: Helvetica Neue, Helvetica, arial, sans-serif;
   color: #eceeeb;
 }
 
@@ -12,8 +12,13 @@ body {
   padding: 1rem;
 }
 
+h1 {
+  text-align: center;
+}
+
 h1, h2, h3, h4, h5, h6 {
-  margin: 0.2em 0;
+  margin-top: 0.03rem;
+  margin-bottom: 0.5rem;
 }
 
 .content {
@@ -23,19 +28,25 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .box {
-  border: 1px solid #616261;
+  border: 1px solid #333;
   border-radius: 5px;
   padding: 1em;
   margin: 1em;
+  background: #111;
 }
 
 img {
+  object-fit: contain;
   max-width: 100%;
+  max-height: 80vh;
+  height: auto;
 }
 
 .module-name {
   float: right;
   color: #bfbfbf;
+  display: flex;
+  align-items: center;
 }
 
 .complete {
@@ -43,8 +54,10 @@ img {
 }
 
 .box-content {
-  display: flex;
-  justify-content: space-between;
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  grid-column-gap: 0.5em;
 }
 
 .box-content .left {
@@ -52,4 +65,57 @@ img {
   grid-auto-flow: row;
   grid-row-gap: 0.5em;
   grid-auto-rows: max-content;
+}
+
+.box-content .right {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+pre.base64 {
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+.icon {
+  fill: #979595;
+  width: 1.25em;
+}
+
+.icon:active {
+  fill: #dbdbdb;
+}
+
+.module-state {
+  margin: 0 0.4rem;
+}
+
+.argument {
+  margin-right: 0.5em;
+}
+
+.argument input {
+  background: #212121;
+  border-radius: 3px;
+  color: #eceeeb;
+  border: none;
+  padding: 0.3rem;
+  font-size: 0.9rem;
+}
+
+.argument .label {
+  margin-bottom: 0.25rem;
+}
+
+.delete-operation {
+  display: flex;
+}
+
+@media screen and (orientation:portrait) {
+  .box-content {
+    grid-auto-flow: row;
+    grid-auto-rows: max-content;
+    grid-row-gap: 1em;
+  }
 }
