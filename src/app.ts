@@ -38,6 +38,7 @@ type State = {
   files: FileList | null;
   operations: OperationState[];
   results: OperationCache;
+  draggingFiles: boolean;
 };
 
 export type Operation = {
@@ -97,7 +98,26 @@ function App(sources: Sources): Sinks {
     files: null,
     operations: [],
     results: new WeakMap(),
+    draggingFiles: false,
   };
+
+  const droppedFiles$ = sources.DOM.select(".file-drop")
+    .events("drop")
+    .map((event) => {
+      event.preventDefault();
+
+      return Array.from(event?.dataTransfer?.items || []).map((item) =>
+        item.getAsFile()
+      );
+    });
+
+  const dragOver$ = sources.DOM.select(".file-drop")
+    .events("dragover")
+    .map((event) => (state: State): State => {
+      event.preventDefault();
+      state.draggingFiles = true;
+      return state;
+    });
 
   const updateOperationResultCache$ = sources.Operations.map(
     (operationCache) =>
@@ -108,11 +128,15 @@ function App(sources: Sources): Sinks {
       }
   );
 
-  const files$ = sources.DOM.select(".file-selection")
+  const pickedFiles$ = sources.DOM.select(".file-selection")
     .events("change")
-    .map((ev: any) => ev.target.files)
+    .map((ev: any) => ev.target.files);
+
+  const setFiles$ = xs
+    .merge(pickedFiles$, droppedFiles$)
     .map((files) => (state: State): State => {
       state.files = files;
+      state.draggingFiles = false;
       return state;
     });
 
@@ -217,11 +241,12 @@ function App(sources: Sources): Sinks {
     });
 
   const update$: Stream<(s: State) => State> = xs.merge(
-    files$,
+    setFiles$,
     addOperation$,
     updateOperationResultCache$,
     changeOperationArg$,
-    deleteOperation$
+    deleteOperation$,
+    dragOver$
   );
 
   const state$ = update$.fold((s, r) => r(s), state);
@@ -246,13 +271,14 @@ function view(state: State): VNode {
   return h("main", [
     h1("File Alchemy"),
     h("section.content", [
-      div(".box", [
+      div(".box.file-drop", [
         h2("Input"),
         div(".box-content", [
           div(".left", [
-            input(".file-selection", {
-              attrs: { type: "file", multiple: false },
-            }),
+            div(".instructions", state.draggingFiles ? "Drop that shit" : "Drag and drop a file here"),
+            // input(".file-selection", {
+            //   attrs: { type: "file", multiple: false },
+            // }),
             ...renderFiles(state.files),
           ]),
           div(".right", renderPreviews(state.files)),
