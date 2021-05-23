@@ -269,7 +269,7 @@ function view(state: State): VNode {
   const moduleCache = new Map<string, any>();
 
   return h("main", [
-    h1("File Alchemy"),
+    h1("File Alchemist"),
     h("section.content", [
       div(".box.file-drop", [
         h2("Input"),
