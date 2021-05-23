@@ -5,7 +5,7 @@ BUILD=$(call rwildcard,build,*.js)
 
 all: static/bundle.js static/modules/imagemagick.js
 
-static/bundle.js: $(BUILD)
+static/bundle.js: build/app.js $(BUILD)
 	npx browserify -p [ partition-bundle --map mapping.json --output static --main ./build/app.js ]
 
 build/app.js: $(SRC)
