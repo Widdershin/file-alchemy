@@ -1,6 +1,6 @@
 all: static/bundle.js static/modules/imagemagick.js
 
-static/bundle.js: $(shell find build -type f)
+static/bundle.js: build/app.js $(shell find build -type f)
 	npx browserify -p [ partition-bundle --map mapping.json --output static --main ./build/app.js ]
 
 build/app.js: $(shell find src -type f)
