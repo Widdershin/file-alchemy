@@ -112,6 +112,26 @@ pre.base64 {
   display: flex;
 }
 
+.file-names {
+  word-break: break-all;
+}
+
+.file-details {
+  color: #acacac;
+}
+
+a {
+  color: #7ffdf1;
+}
+
+a:visited {
+  color: #bb85fd;
+}
+
+.download-link {
+  font-size: larger;
+}
+
 @media screen and (orientation:portrait) {
   .box-content {
     grid-auto-flow: row;

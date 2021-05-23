@@ -45,6 +45,28 @@ export const operations: Operation[] = [
     ],
   },
   {
+    module: "imagemagick",
+    name: "convertImage",
+    type: /image\/.*/,
+    args: [
+      {
+        name: "Format",
+        type: "option",
+        values: [
+          { label: ".bmp", value: "image/bmp" },
+          { label: ".gif", value: "image/gif" },
+          { label: ".ico", value: "image/x-icon" },
+          { label: ".jpeg", value: "image/jpeg" },
+          { label: ".pdf", value: "application/pdf" },
+          { label: ".png", value: "image/png" },
+          { label: ".psd", value: "image/vnd.adobe.photoshop" },
+          { label: ".tiff", value: "image/tiff" },
+          { label: ".webp", value: "image/webp" },
+        ],
+      },
+    ],
+  },
+  {
     module: "base64",
     name: "base64Encode",
     type: /.*/,

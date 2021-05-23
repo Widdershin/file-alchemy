@@ -9,6 +9,8 @@ import {
   ul,
   li,
   section,
+  select,
+  option,
   img,
   VNode,
 } from "@cycle/dom";
@@ -59,7 +61,11 @@ type OperationResult =
   | { state: "complete"; output: Blob; text: string };
 type OperationSources = MemoryStream<OperationCache>;
 
-type Argument = { name: string } & { type: "number"; default: number };
+type Option = { label: string; value: any };
+type Argument = { name: string } & (
+  | { type: "number"; default: number }
+  | { type: "option"; values: Option[] }
+);
 type ArgState = { arg: Argument; value: number };
 
 type OperationState = {
@@ -116,10 +122,23 @@ function App(sources: Sources): Sinks {
     .map((operation: Operation) => (state: State): State => {
       const operationState: OperationState = {
         operation,
-        args: operation.args.map((arg) => ({
-          arg,
-          value: arg.default,
-        })),
+        args: operation.args.map((arg: Argument): ArgState => {
+          if (arg.type === "number") {
+            return {
+              arg,
+              value: arg.default,
+            };
+          }
+
+          if (arg.type === "option") {
+            return {
+              arg,
+              value: 0,
+            };
+          }
+
+          throw new Error("Unknown arg type" + arg);
+        }),
       };
 
       state.operations = state.operations.concat(operationState);
@@ -167,7 +186,15 @@ function App(sources: Sources): Sinks {
         return state;
       }
 
-      newValue = parseInt(newValue, 10) || arg.arg.default;
+      newValue = parseInt(newValue, 10);
+
+      if (typeof newValue !== "number" || Number.isNaN(newValue)) {
+        if (arg.arg.type === "number") {
+          newValue = arg.arg.default;
+        } else {
+          newValue = 0;
+        }
+      }
 
       state.operations = state.operations.map((op, index) => {
         if (index === opIndex) {
@@ -248,7 +275,10 @@ function renderFiles(files: FileList | null): VNode[] {
     div(
       ".file-names",
       Array.from(files).map((file) =>
-        div(".file", [`${file.name} - ${file.type} - ${renderSize(file.size)}`])
+        div(".file", [
+          div(".filename", file.name),
+          div(".file-details", `${file.type} (${renderSize(file.size)})`),
+        ])
       )
     ),
   ];
@@ -306,28 +336,59 @@ function renderOperationState(
 
     if (type.startsWith("text/") || type.endsWith(";base64")) {
       preview = h("pre.base64", operationResult.text);
-    } else {
+    } else if (
+      type.startsWith("image/") &&
+      !type.startsWith("image/vnd.adobe.photoshop")
+    ) {
       preview = h("img", {
         attrs: { decoding: "async" },
         props: { src: objectURL },
       });
+    } else {
+      preview = h(
+        "a.download-link",
+        {
+          attrs: { href: objectURL },
+        },
+        "Download"
+      );
     }
   }
 
   function renderArgument(argState: ArgState, argIndex: number): VNode {
     const argument = argState.arg;
 
-    return div(".argument", [
-      div(".label", argument.name),
-      input(".arg-input", {
+    let inputEl = div();
+
+    if (argument.type === "number") {
+      inputEl = input(".arg-input", {
         dataset: {
           argIndex: argIndex.toString(),
           operationIndex: index.toString(),
         },
-        attrs: { value: argState.value },
+        attrs: { type: "number", value: argState.value },
         props: { value: argState.value },
-      }),
-    ]);
+      });
+    }
+
+    if (argument.type === "option") {
+      inputEl = select(
+        ".arg-input",
+        {
+          dataset: {
+            argIndex: argIndex.toString(),
+            operationIndex: index.toString(),
+          },
+          attrs: { type: "number", value: argState.value },
+          props: { value: argState.value },
+        },
+        argument.values.map((value, index) =>
+          option({ attrs: { value: index.toString() } }, value.label)
+        )
+      );
+    }
+
+    return div(".argument", [div(".label", argument.name), inputEl]);
   }
 
   let state = operationResult.state || "unknown";
@@ -518,7 +579,15 @@ function operationsDriver(operations$: OperationSinks): OperationSources {
 
             module.exports[operationState.operation.name](
               previousResult,
-              ...operationState.args.map((arg) => arg.value)
+              ...operationState.args.map((arg) => {
+                if (arg.arg.type === "number") {
+                  return arg.value;
+                }
+
+                if (arg.arg.type === "option") {
+                  return arg.arg.values[arg.value].value;
+                }
+              })
             ).then((output: Blob) => {
               output.text().then((text) => {
                 updateCache(input, operationState, {

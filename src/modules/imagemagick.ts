@@ -108,20 +108,37 @@ export async function modulate(
   });
 }
 
-export async function convertImage(
-  image: Blob,
-  format: MagickFormat,
-  hue: number
-): Promise<Blob> {
+const formats: { [key: string]: MagickFormat } = {
+  "image/bmp": MagickFormat.Bmp,
+  "image/png": MagickFormat.Png,
+  "image/jpeg": MagickFormat.Jpeg,
+  "image/x-icon": MagickFormat.Icon,
+  "image/gif": MagickFormat.Gif,
+  "application/pdf": MagickFormat.Pdf,
+  "image/vnd.adobe.photoshop": MagickFormat.Psd,
+  "image/tiff": MagickFormat.Tiff,
+  "image/webp": MagickFormat.Webp,
+};
+
+export async function convertImage(image: Blob, format: string): Promise<Blob> {
   return image.arrayBuffer().then((buffer) => {
+    let magickFormat = formats[format];
+
+    if (!magickFormat) {
+      console.warn(
+        `Could not find MagickFormat for ${format}, defaulting to png`
+      );
+      magickFormat = MagickFormat.Png;
+    }
+
     const data = new Uint8Array(buffer);
 
     return new Promise((resolve, reject) => {
       ImageMagick.read(data, (image) => {
         image.write((data) => {
-          const blob = new Blob([data], { type: "image/png" });
+          const blob = new Blob([data], { type: format });
           resolve(blob);
-        }, format);
+        }, magickFormat);
       });
     });
   });
